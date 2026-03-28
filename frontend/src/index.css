@@ -1,0 +1,74 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  body {
+    @apply bg-nexus-bg text-nexus-text font-mono;
+  }
+}
+
+@layer components {
+  .panel {
+    @apply bg-nexus-panel border border-nexus-border rounded-sm;
+  }
+
+  .panel-header {
+    @apply flex items-center justify-between px-4 py-2 border-b border-nexus-border;
+  }
+
+  .panel-title {
+    @apply text-xs font-semibold tracking-widest text-nexus-accent2 uppercase;
+  }
+
+  .badge {
+    @apply text-[10px] px-2 py-0.5 rounded-sm font-semibold tracking-wider uppercase;
+  }
+
+  .badge-up {
+    @apply bg-nexus-up/10 text-nexus-up border border-nexus-up/30;
+  }
+
+  .badge-down {
+    @apply bg-nexus-down/10 text-nexus-down border border-nexus-down/30;
+  }
+
+  .badge-neutral {
+    @apply bg-nexus-neutral/10 text-nexus-neutral border border-nexus-neutral/30;
+  }
+
+  .badge-accent {
+    @apply bg-nexus-accent/10 text-nexus-accent2 border border-nexus-accent/30;
+  }
+
+  .loading-pulse {
+    @apply animate-pulse bg-nexus-border rounded;
+  }
+
+  .scanline {
+    background: repeating-linear-gradient(
+      0deg,
+      transparent,
+      transparent 2px,
+      rgba(26, 106, 255, 0.01) 2px,
+      rgba(26, 106, 255, 0.01) 4px
+    );
+    pointer-events: none;
+  }
+}
+
+@keyframes blink {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0; }
+}
+
+.blink { animation: blink 1s step-end infinite; }
+
+@keyframes glitch {
+  0% { clip-path: inset(40% 0 61% 0); transform: translate(-2px, 0); }
+  20% { clip-path: inset(92% 0 1% 0); transform: translate(2px, 0); }
+  40% { clip-path: inset(43% 0 1% 0); transform: translate(-2px, 0); }
+  60% { clip-path: inset(25% 0 58% 0); transform: translate(2px, 0); }
+  80% { clip-path: inset(54% 0 7% 0); transform: translate(-2px, 0); }
+  100% { clip-path: inset(58% 0 43% 0); transform: translate(0, 0); }
+}
