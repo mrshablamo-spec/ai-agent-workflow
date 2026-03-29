@@ -1,98 +1,91 @@
-# NEXUS — Macro & Geopolitical Intelligence Platform
+# Mini-Palantir Supply Chain Intelligence Engine
 
-A Palantir-style local intelligence dashboard aggregating news, economics, and market data into a single dark-theme interface.
+This repository now focuses on a lightweight supply chain intelligence workflow inspired by Palantir's information-asymmetry model: pull public 10-K filings, isolate dependency language, map supplier and geographic exposure, enrich with free news, and output a graph you can act on before the crowd catches up.
 
-## Features
+## What It Does
 
-- **News & Geopolitics Feed** — NewsAPI + RSS (Reuters, Al Jazeera, FT) with Groq-powered AI summaries (cached)
-- **Economic Indicators** — Fed Funds Rate, CPI YoY, GDP, Unemployment, 10Y Treasury, WTI Oil via FRED API
-- **Markets Overview** — SPY, QQQ, DXY, GLD, USO, TLT with 5-day sparklines via yfinance
-- **AI Signal Engine** — Groq/llama-3.1-8b-instant macro signal: sentiment, risks, opportunities, geopolitical brief
-- **Watchlist** — NVDA, PLTR, ANET, MU, COHR, CEG, SPY, XLE with price, % change, and market cap
+- Pulls the latest 10-K for a public company directly from the SEC with a descriptive User-Agent, throttling, and local caching.
+- Extracts `Item 1. Business` and `Item 1A. Risk Factors` from the filing text.
+- Detects dependency clues such as sole-source relationships, constrained suppliers, and manufacturing partners.
+- Flags geographic exposure and risk categories like geopolitics, supplier concentration, manufacturing disruptions, logistics, and commodity bottlenecks.
+- Builds a NetworkX graph linking the target company to suppliers, geographies, risks, and matching news stories.
+- Exposes both a FastAPI endpoint and a simple CLI workflow.
+
+## Project Layout
+
+```text
+backend/
+  main.py
+  run_workflow.py
+  supply_chain_intel/
+    config.py
+    models.py
+    scrapers/
+    parsers/
+    analysts/
+    graph/
+    pipelines/
+    utils/
+PROJECT_STRUCTURE.md
+AGENTS.md
+PLAN.md
+requirements.txt
+```
 
 ## Setup
 
-### 1. API Keys
+1. Create a virtual environment and install dependencies.
 
-Copy `.env.example` to `.env` and fill in your keys:
+```bash
+python -m venv .venv
+source .venv/bin/activate
+pip install -r requirements.txt
+```
+
+2. Copy the environment template and set a real email address for SEC Fair Access compliance.
 
 ```bash
 cp .env.example .env
 ```
 
-```env
-NEWS_API_KEY=your_newsapi_key        # https://newsapi.org (free tier)
-FRED_API_KEY=your_fred_api_key       # https://fred.stlouisfed.org/docs/api/api_key.html (free)
-GROQ_API_KEY=your_groq_api_key       # https://console.groq.com (free)
-```
-
-> **Note:** All three APIs have free tiers. yfinance requires no API key.
-
-### 2. Backend
+3. Run the API.
 
 ```bash
 cd backend
-pip install -r requirements.txt
 uvicorn main:app --reload --port 8000
 ```
 
-API docs available at `http://localhost:8000/docs`
-
-### 3. Frontend
+4. Or run the workflow from the command line.
 
 ```bash
-cd frontend
-npm install
-npm start
+cd backend
+python run_workflow.py NVDA
 ```
 
-Opens at `http://localhost:3000`
+## API
 
-## Architecture
+- `GET /health`
+- `GET /supply-chain/health`
+- `POST /supply-chain/analyze`
 
-```
-nexus/
-├── backend/
-│   ├── main.py                  # FastAPI app, CORS, router registration
-│   ├── requirements.txt
-│   └── routers/
-│       ├── news.py              # NewsAPI + RSS + Groq summaries (cached)
-│       ├── economics.py         # FRED API indicators
-│       ├── markets.py           # yfinance markets + sparklines
-│       ├── signals.py           # Groq macro signal engine
-│       └── watchlist.py         # yfinance watchlist
-├── frontend/
-│   ├── src/
-│   │   ├── App.jsx              # Main layout, data orchestration, 15-min refresh
-│   │   ├── components/
-│   │   │   ├── NewsFeed.jsx
-│   │   │   ├── EconomicIndicators.jsx
-│   │   │   ├── MarketsOverview.jsx
-│   │   │   ├── AISignalEngine.jsx
-│   │   │   └── Watchlist.jsx
-│   └── ...
-├── .env                         # API keys (git-ignored)
-└── .env.example
+Example request:
+
+```json
+{
+  "ticker": "NVDA",
+  "include_news": true
+}
 ```
 
-## API Endpoints
+## Notes on SEC Access
 
-| Endpoint | Description |
-|---|---|
-| `GET /news/?category=geopolitics` | News feed, filtered by category |
-| `GET /economics/` | FRED economic indicators |
-| `GET /markets/` | Market prices + sparklines |
-| `GET /watchlist/` | Watchlist ticker data |
-| `POST /signals/analyze` | Groq AI macro signal |
-| `GET /health` | API key status check |
+The engine is intentionally conservative:
 
-## Caching
+- It uses a descriptive `User-Agent` composed from `SEC_CONTACT_NAME` and `SEC_CONTACT_EMAIL`.
+- It throttles outbound SEC requests.
+- It caches SEC responses locally under `.cache/supply_chain`.
+- It does not assume any paid API keys.
 
-- **News summaries**: Persistent in-memory dict keyed by article URL hash. Groq only called for new articles.
-- **API responses**: TTLCache with 15-minute TTL matches frontend refresh interval.
-- **Frontend**: Auto-refreshes all panels every 15 minutes; manual refresh button available.
+## Current Limits
 
-## Tech Stack
-
-- **Backend**: Python 3.11+ · FastAPI · uvicorn · httpx · yfinance · feedparser · groq · cachetools
-- **Frontend**: React 18 · Tailwind CSS 3 · Recharts · Axios · date-fns · lucide-react
+This is a strong Phase 1 foundation, but the extraction logic is still heuristic. It is good at surfacing candidate dependencies and risk pathways quickly, not replacing human due diligence. The next best improvements would be richer entity normalization, supplier alias resolution, and a small UI on top of the API payload.
