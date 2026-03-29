@@ -48,19 +48,32 @@ pip install -r requirements.txt
 cp .env.example .env
 ```
 
-3. Run the API.
+3. Run the website.
+
+```bash
+./start.sh
+```
+
+This builds the frontend and serves the full website at `http://localhost:8000`.
+
+4. Or run the API by itself.
 
 ```bash
 cd backend
 uvicorn main:app --reload --port 8000
 ```
 
-4. Or run the workflow from the command line.
+5. Or run the workflow from the command line.
 
 ```bash
 cd backend
 python run_workflow.py NVDA
 ```
+
+## Website
+
+- Website UI: `http://localhost:8000`
+- API docs: `http://localhost:8000/docs`
 
 ## API
 

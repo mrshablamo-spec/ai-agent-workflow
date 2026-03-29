@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 set -e
 
-echo "Starting Mini-Palantir Supply Chain Intelligence Engine..."
+echo "Starting Mini-Palantir Supply Chain Intelligence website..."
 
 if [ ! -f .env ]; then
   echo "No .env file found. Copying from .env.example..."
@@ -12,17 +12,12 @@ fi
 echo "Installing backend dependencies..."
 python3 -m pip install -q -r requirements.txt
 
-echo "Starting backend on http://localhost:8000 ..."
-(cd backend && uvicorn main:app --host 0.0.0.0 --port 8000 --reload) &
-BACKEND_PID=$!
-
 echo "Installing frontend dependencies..."
 (cd frontend && npm install --silent)
 
-echo "Starting frontend on http://localhost:3000 ..."
-(cd frontend && REACT_APP_API_URL=http://localhost:8000 npm start) &
-FRONTEND_PID=$!
+echo "Building frontend website..."
+(cd frontend && REACT_APP_API_URL=http://localhost:8000 npm run build >/dev/null)
 
-echo "Press Ctrl+C to stop all services."
-trap "kill $BACKEND_PID $FRONTEND_PID 2>/dev/null || true" EXIT INT TERM
-wait
+echo "Starting website on http://localhost:8000 ..."
+cd backend
+python3 -m uvicorn main:app --host 0.0.0.0 --port 8000 --reload
