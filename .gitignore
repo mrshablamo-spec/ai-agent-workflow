@@ -11,3 +11,12 @@ dist/
 .DS_Store
 *.egg-info/
 .pytest_cache/
+
+# Cached data — don't commit raw 10-K filings or processed CSVs
+data/raw/
+data/processed/
+
+# Generated outputs
+outputs/
+
+*.log
