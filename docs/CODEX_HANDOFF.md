@@ -10,9 +10,10 @@
   - Country list expansion: completed with alias-aware geography mapping.
 
 ## Next Task Queue
+- Mocked SEC integration coverage: completed with FilingIndex and router health tests.
+- Frontend SEC warning surfacing: completed in mission control.
+- CLI export artifacts: completed for JSON, CSV, and GEXF output.
 - Push the local commit once GitHub auth is available on this machine.
-- Optionally add integration tests that mock SEC responses so live smoke tests are not blocked by SEC rate limiting.
-- Optionally surface the SEC identity warning directly in the frontend mission control box.
 - Optionally export graph JSON/GEXF artifacts from the UI or CLI.
 
 ## Architecture Decisions

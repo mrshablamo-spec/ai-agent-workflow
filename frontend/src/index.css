@@ -245,6 +245,20 @@ input {
   color: #ffd3dc;
 }
 
+
+.warning-banner {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  margin-bottom: 16px;
+  padding: 12px 14px;
+  border-radius: 16px;
+  border: 1px solid rgba(247, 200, 115, 0.3);
+  background: rgba(247, 200, 115, 0.12);
+  color: #ffe6b0;
+  line-height: 1.6;
+}
+
 .dashboard-grid {
   display: grid;
   grid-template-columns: repeat(12, minmax(0, 1fr));

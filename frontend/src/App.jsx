@@ -1,4 +1,4 @@
-import React, { startTransition, useMemo, useState } from "react";
+import React, { startTransition, useEffect, useMemo, useState } from "react";
 import axios from "axios";
 import {
   AlertTriangle,
@@ -53,6 +53,25 @@ export default function App() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [analysis, setAnalysis] = useState(null);
+  const [health, setHealth] = useState(null);
+
+  useEffect(() => {
+    let isMounted = true;
+    axios.get(`${API_BASE}/supply-chain/health`, { timeout: 15000 })
+      .then((response) => {
+        if (isMounted) {
+          setHealth(response.data);
+        }
+      })
+      .catch(() => {
+        if (isMounted) {
+          setHealth({ warning: "Unable to reach supply-chain health endpoint." });
+        }
+      });
+    return () => {
+      isMounted = false;
+    };
+  }, []);
 
   const runAnalysis = async (targetTicker = ticker) => {
     setLoading(true);
@@ -82,7 +101,6 @@ export default function App() {
     const supplierCount = analysis.supplier_signals?.length || 0;
     const geographyCount = analysis.geography_signals?.length || 0;
     const riskCount = analysis.risk_signals?.length || 0;
-    const newsCount = analysis.news_signals?.length || 0;
 
     const topRisk = analysis.risk_signals?.[0];
     const topGeography = analysis.geography_signals?.[0];
@@ -91,11 +109,12 @@ export default function App() {
       supplierCount,
       geographyCount,
       riskCount,
-      newsCount,
       topRisk: topRisk ? `${topRisk.category} / ${Math.round(topRisk.severity * 100)}% severity` : "No major risk classified yet",
       topGeography: topGeography ? `${topGeography.geography} / ${topGeography.mention_count} mentions` : "No geographic concentration detected",
     };
   }, [analysis]);
+
+  const secWarning = analysis?.notes?.find((note) => note.toLowerCase().includes("placeholder")) || health?.warning;
 
   return (
     <div className="shell">
@@ -122,6 +141,13 @@ export default function App() {
             <Radar size={16} />
             <span>Mission Control</span>
           </div>
+
+          {secWarning && (
+            <div className="warning-banner">
+              <AlertTriangle size={14} />
+              <span>{secWarning}</span>
+            </div>
+          )}
 
           <label className="field-label" htmlFor="ticker">Target Ticker</label>
           <div className="ticker-input-row">
@@ -155,7 +181,7 @@ export default function App() {
           </label>
 
           <div className="command-note">
-            Use a real email in your `.env` for live SEC access. The engine caches filings and throttles requests.
+            Use a real email in your `.env` for live SEC access. The engine caches filings, retries 429s, and throttles requests.
           </div>
         </div>
       </header>
