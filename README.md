@@ -1,98 +1,93 @@
-# NEXUS — Macro & Geopolitical Intelligence Platform
+# Mini-Palantir Supply Chain Intelligence Engine
 
-A Palantir-style local intelligence dashboard aggregating news, economics, and market data into a single dark-theme interface.
+> "Most retail investors react to news *after* the stock drops. This engine finds the
+> structural dependency *before* any news exists."
 
-## Features
+Maps relationships between a target company, its suppliers, and geographic risks using
+SEC 10-K filings and public news RSS — no paid APIs, no API keys required.
 
-- **News & Geopolitics Feed** — NewsAPI + RSS (Reuters, Al Jazeera, FT) with Groq-powered AI summaries (cached)
-- **Economic Indicators** — Fed Funds Rate, CPI YoY, GDP, Unemployment, 10Y Treasury, WTI Oil via FRED API
-- **Markets Overview** — SPY, QQQ, DXY, GLD, USO, TLT with 5-day sparklines via yfinance
-- **AI Signal Engine** — Groq/llama-3.1-8b-instant macro signal: sentiment, risks, opportunities, geopolitical brief
-- **Watchlist** — NVDA, PLTR, ANET, MU, COHR, CEG, SPY, XLE with price, % change, and market cap
-
-## Setup
-
-### 1. API Keys
-
-Copy `.env.example` to `.env` and fill in your keys:
+## Quick Start
 
 ```bash
-cp .env.example .env
-```
-
-```env
-NEWS_API_KEY=your_newsapi_key        # https://newsapi.org (free tier)
-FRED_API_KEY=your_fred_api_key       # https://fred.stlouisfed.org/docs/api/api_key.html (free)
-GROQ_API_KEY=your_groq_api_key       # https://console.groq.com (free)
-```
-
-> **Note:** All three APIs have free tiers. yfinance requires no API key.
-
-### 2. Backend
-
-```bash
-cd backend
 pip install -r requirements.txt
-uvicorn main:app --reload --port 8000
+
+# Edit config.py — set your email in SEC_USER_AGENT (required for SEC Fair Access)
+
+python main.py --ticker AAPL
 ```
 
-API docs available at `http://localhost:8000/docs`
+## What It Does
 
-### 3. Frontend
+Given a ticker, the full pipeline:
+
+| Phase | What Happens |
+|---|---|
+| 1 | Downloads the latest 10-K from SEC EDGAR (cached locally) |
+| 2 | Extracts Item 1 (Business) + Item 1A (Risk Factors) text |
+| 3 | Finds suppliers, geographies, and risk signals — including CRITICAL sole-source dependencies |
+| 4 | Scores each dependency: geo tier × Item1A weight × severity × risk phrase density |
+| 5 | Builds supply chain knowledge graph, runs ripple simulation, overlays news alerts |
+
+## The Ripple Simulator
+
+Answers the question institutional analysts pay for:
+
+> "If Taiwan is disrupted, which companies in my portfolio are downstream — and how hard are they hit?"
 
 ```bash
-cd frontend
-npm install
-npm start
+python main.py --ticker NVDA --simulate-shock taiwan
+python main.py --ticker AAPL --simulate-shock ukraine
 ```
 
-Opens at `http://localhost:3000`
+BFS propagation with depth decay: the further the hop, the lower the impact score.
+Max depth: 4 hops (beyond that, impact is considered immaterial).
 
-## Architecture
+## Live Monitoring
 
-```
-nexus/
-├── backend/
-│   ├── main.py                  # FastAPI app, CORS, router registration
-│   ├── requirements.txt
-│   └── routers/
-│       ├── news.py              # NewsAPI + RSS + Groq summaries (cached)
-│       ├── economics.py         # FRED API indicators
-│       ├── markets.py           # yfinance markets + sparklines
-│       ├── signals.py           # Groq macro signal engine
-│       └── watchlist.py         # yfinance watchlist
-├── frontend/
-│   ├── src/
-│   │   ├── App.jsx              # Main layout, data orchestration, 15-min refresh
-│   │   ├── components/
-│   │   │   ├── NewsFeed.jsx
-│   │   │   ├── EconomicIndicators.jsx
-│   │   │   ├── MarketsOverview.jsx
-│   │   │   ├── AISignalEngine.jsx
-│   │   │   └── Watchlist.jsx
-│   └── ...
-├── .env                         # API keys (git-ignored)
-└── .env.example
+Scans news RSS for all high-risk nodes. Fires alerts when a headline matches risk keywords.
+
+```bash
+python main.py --ticker AAPL --monitor
+# Output: ⚠ [AAPL] Risk: 'taiwan' hit by "..." — ripple score: 6.24
 ```
 
-## API Endpoints
+## Outputs
 
-| Endpoint | Description |
+| File | Description |
 |---|---|
-| `GET /news/?category=geopolitics` | News feed, filtered by category |
-| `GET /economics/` | FRED economic indicators |
-| `GET /markets/` | Market prices + sparklines |
-| `GET /watchlist/` | Watchlist ticker data |
-| `POST /signals/analyze` | Groq AI macro signal |
-| `GET /health` | API key status check |
+| `data/processed/{TICKER}/entities.csv` | All extracted entities with severity and risk signals |
+| `data/processed/{TICKER}/dependency_table.csv` | Ranked dependency table (flagged top 5) |
+| `outputs/graphs/{TICKER}_supply_chain.gexf` | Gephi-importable graph export |
+| `outputs/graphs/{TICKER}_supply_chain.png` | Dark-theme visual risk graph |
+| `outputs/reports/{TICKER}_risk_summary.json` | JSON report with top risks + ripple paths |
 
-## Caching
+## CLI Reference
 
-- **News summaries**: Persistent in-memory dict keyed by article URL hash. Groq only called for new articles.
-- **API responses**: TTLCache with 15-minute TTL matches frontend refresh interval.
-- **Frontend**: Auto-refreshes all panels every 15 minutes; manual refresh button available.
+```
+python main.py --ticker AAPL                         # Full pipeline
+python main.py --ticker AAPL --force-download        # Re-fetch filing
+python main.py --ticker AAPL --simulate-shock taiwan # Ripple simulation
+python main.py --ticker AAPL --monitor               # Live news alerts
+python main.py --ticker AAPL --no-news               # Skip news fetching
+python main.py --ticker AAPL --skip-graph            # Phases 1-4 only
+python main.py --ticker AAPL --verbose               # Debug logging
+```
 
-## Tech Stack
+## Two-Agent Workflow
 
-- **Backend**: Python 3.11+ · FastAPI · uvicorn · httpx · yfinance · feedparser · groq · cachetools
-- **Frontend**: React 18 · Tailwind CSS 3 · Recharts · Axios · date-fns · lucide-react
+| Agent | Role |
+|---|---|
+| Claude Code | Lead Analyst & Architect — defines extraction rules, ripple logic, and scoring model |
+| ChatGPT Codex | Senior Engineer — implements scrapers, parsers, graph infrastructure |
+
+See `docs/AGENTS.md` for full role definitions and collaboration protocol.
+
+## SEC Fair Access
+
+All EDGAR requests comply with SEC Fair Access rules:
+- Rate limited to ~7 req/sec (limit: 10)
+- `User-Agent` identifies the bot and includes a contact email
+- Raw filings cached locally — never re-fetched unless `--force-download`
+
+Set `SEC_USER_AGENT` in `config.py` before running at scale.
+Reference: https://www.sec.gov/os/accessing-edgar-data
