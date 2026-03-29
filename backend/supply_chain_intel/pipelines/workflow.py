@@ -1,12 +1,11 @@
 from __future__ import annotations
 
-from pathlib import Path
-
 import yfinance as yf
 
 from supply_chain_intel.analysts.dependency_analyst import DependencyAnalyst
 from supply_chain_intel.analysts.geography_analyst import GeographyAnalyst
 from supply_chain_intel.analysts.risk_analyst import RiskAnalyst
+from supply_chain_intel.config import settings
 from supply_chain_intel.graph.graph_builder import GraphBuilder
 from supply_chain_intel.models import FilingMetadata
 from supply_chain_intel.parsers.entity_extractor import EntityExtractor
@@ -55,6 +54,13 @@ def run_supply_chain_workflow(ticker: str, include_news: bool = True) -> dict:
     )
     graph = graph_builder.build(filing.company_name, supplier_signals, geographies, risks, news_signals)
 
+    notes = [
+        "Signals are heuristic and intended for pre-news triage, not final investment decisions.",
+        "SEC access follows a descriptive User-Agent, local caching, and throttle-aware retrieval.",
+    ]
+    if settings.sec_identity_warning:
+        notes.append(settings.sec_identity_warning)
+
     return {
         "company": _company_profile(filing.ticker) | {"name": filing.company_name},
         "filing": filing.to_dict() | {"cache_path": str(filing_path)},
@@ -69,8 +75,5 @@ def run_supply_chain_workflow(ticker: str, include_news: bool = True) -> dict:
         "dependency_table": dependency_table.to_dict(orient="records"),
         "graph": graph_builder.to_node_link(graph),
         "graph_preview": graph_builder.dataframe_preview(graph).to_dict(orient="records"),
-        "notes": [
-            "Signals are heuristic and intended for pre-news triage, not final investment decisions.",
-            "SEC access follows a descriptive User-Agent, local caching, and throttle-aware retrieval.",
-        ],
+        "notes": notes,
     }

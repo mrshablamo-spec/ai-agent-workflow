@@ -5,6 +5,13 @@ from dataclasses import dataclass
 from pathlib import Path
 
 
+PLACEHOLDER_EMAILS = {
+    "research@example.com",
+    "you@example.com",
+    "example@example.com",
+}
+
+
 @dataclass
 class Settings:
     sec_contact_email: str = os.getenv("SEC_CONTACT_EMAIL", "research@example.com")
@@ -16,6 +23,19 @@ class Settings:
     @property
     def sec_user_agent(self) -> str:
         return f"{self.sec_contact_name} {self.sec_contact_email}"
+
+    @property
+    def has_placeholder_identity(self) -> bool:
+        return self.sec_contact_email.lower() in PLACEHOLDER_EMAILS or self.sec_contact_name == "MiniPalantirResearchBot"
+
+    @property
+    def sec_identity_warning(self) -> str | None:
+        if not self.has_placeholder_identity:
+            return None
+        return (
+            "SEC_CONTACT_NAME and SEC_CONTACT_EMAIL still use placeholder values. "
+            "Replace them in .env before heavy live scraping to stay within SEC Fair Access guidance."
+        )
 
 
 settings = Settings()

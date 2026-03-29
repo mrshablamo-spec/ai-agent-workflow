@@ -3,6 +3,7 @@ from __future__ import annotations
 from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel, Field
 
+from supply_chain_intel.config import settings
 from supply_chain_intel.pipelines.workflow import run_supply_chain_workflow
 
 router = APIRouter(prefix="/supply-chain", tags=["supply-chain"])
@@ -19,6 +20,8 @@ def supply_chain_health() -> dict:
         "status": "ok",
         "engine": "mini-palantir-supply-chain",
         "requires_api_keys": False,
+        "sec_user_agent": settings.sec_user_agent,
+        "warning": settings.sec_identity_warning,
     }
 
 
