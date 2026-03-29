@@ -25,6 +25,7 @@ import json
 import logging
 import os
 from collections import deque
+from typing import Optional
 
 import pandas as pd
 import networkx as nx
@@ -202,7 +203,9 @@ def simulate_ripple(G: nx.DiGraph, shocked_node: str) -> list[dict]:
     while queue:
         node, depth, path, weights = queue.popleft()
         if depth > 0:
-            cum_score = sum(weights) * (DEPTH_DECAY ** depth)
+            # Apply decay per hop so each additional hop diminishes the signal.
+            # cum_score = sum of (edge_weight × decay^hop_index) along the path
+            cum_score = sum(w * (DEPTH_DECAY ** (i + 1)) for i, w in enumerate(weights))
             results.append({
                 "node": node,
                 "ripple_score": round(cum_score, 3),
@@ -424,8 +427,8 @@ def generate_risk_report(
     ticker: str,
     dep_df: pd.DataFrame,
     G: nx.DiGraph,
-    ripple_results: list[dict] | None = None,
-    alerts: list[dict] | None = None,
+    ripple_results: Optional[list] = None,
+    alerts: Optional[list] = None,
 ) -> str:
     """
     Generate a JSON risk summary including top dependencies, ripple paths, and alerts.
@@ -444,7 +447,7 @@ def generate_risk_report(
     os.makedirs(OUTPUTS_REPORTS_DIR, exist_ok=True)
     out_path = os.path.join(OUTPUTS_REPORTS_DIR, f"{ticker}_risk_summary.json")
 
-    flagged = dep_df[dep_df["flagged"] == True].to_dict(orient="records") if not dep_df.empty else []
+    flagged = dep_df[dep_df["flagged"]].to_dict(orient="records") if not dep_df.empty else []
     high_geo = dep_df[
         (dep_df["dependency_type"] == "geography") & (dep_df["risk_score"] >= 6)
     ]["dependency"].tolist() if not dep_df.empty else []

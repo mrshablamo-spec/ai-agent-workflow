@@ -93,7 +93,7 @@ def run_pipeline(
     try:
         dep_df = build_dependency_table(ticker, entities_df)
         _ok(f"{len(dep_df)} dependencies identified")
-        flagged = dep_df[dep_df["flagged"] == True] if not dep_df.empty else dep_df
+        flagged = dep_df[dep_df["flagged"]] if not dep_df.empty else dep_df
         if not flagged.empty:
             print(f"\n  Top {len(flagged)} flagged dependencies:")
             for _, row in flagged.iterrows():

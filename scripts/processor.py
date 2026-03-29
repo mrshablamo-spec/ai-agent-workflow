@@ -20,7 +20,9 @@ Owner: Codex implements. Claude reviews for financial logic accuracy.
 import logging
 import os
 import re
+from typing import Optional
 import pandas as pd
+from bs4 import BeautifulSoup
 
 # ── Config ────────────────────────────────────────────────────────────────────
 try:
@@ -116,8 +118,6 @@ def extract_sections(ticker: str) -> dict[str, str]:
     Raises:
         FileNotFoundError: Raw 10-K not yet downloaded.
     """
-    from bs4 import BeautifulSoup
-
     ticker = ticker.upper()
     raw_path = os.path.join(DATA_RAW_DIR, ticker, "10k_latest.html")
     if not os.path.exists(raw_path):
@@ -159,8 +159,7 @@ def extract_sections(ticker: str) -> dict[str, str]:
     return sections
 
 
-def _extract_by_headings(soup) -> dict[str, str]:
-    from bs4 import BeautifulSoup
+def _extract_by_headings(soup: BeautifulSoup) -> dict[str, str]:
     sections = {}
     candidates = soup.find_all(["b", "strong", "h1", "h2", "h3", "h4", "p"])
     markers = []
@@ -232,7 +231,7 @@ def _clean_text(text: str) -> str:
 
 # ── Entity extraction ─────────────────────────────────────────────────────────
 
-def extract_entities(ticker: str, sections: dict[str, str] | None = None) -> pd.DataFrame:
+def extract_entities(ticker: str, sections: Optional[dict] = None) -> pd.DataFrame:
     """
     Extract supplier hints, geographic mentions, and risk signals from
     Item 1 + Item 1A text.
@@ -499,7 +498,7 @@ def _aggregate(scored: pd.DataFrame) -> pd.DataFrame:
         scored.groupby(["entity_text", "entity_type"])
         .agg(
             risk_score=("risk_score", "max"),
-            mention_count=("risk_score", "count"),
+            mention_count=("entity_text", "count"),
             item1a_count=("section", lambda s: (s == "item1a").sum()),
             risk_signals=("risk_signals", union_signals),
             severity=("severity", top_severity),
