@@ -102,3 +102,11 @@ The engine is intentionally conservative:
 ## Current Limits
 
 This is a strong Phase 1 foundation, but the extraction logic is still heuristic. It is good at surfacing candidate dependencies and risk pathways quickly, not replacing human due diligence. The next best improvements would be richer entity normalization, supplier alias resolution, and a small UI on top of the API payload.
+
+
+## Render Deploy
+
+1. Push the `codex/website-single-url` branch to GitHub.
+2. In Render, create a new `Blueprint` and connect this repository.
+3. Render will read `render.yaml`, build the frontend, and run the FastAPI app on one HTTPS URL.
+4. Set a real `SEC_CONTACT_EMAIL` and optionally `SEC_CONTACT_NAME` in the Render environment before production use.

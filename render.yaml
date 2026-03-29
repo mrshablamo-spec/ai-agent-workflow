@@ -1,0 +1,18 @@
+services:
+  - type: web
+    name: ai-agent-workflow
+    runtime: python
+    plan: free
+    buildCommand: |
+      pip install -r requirements.txt
+      cd frontend && npm install && npm run build
+    startCommand: cd backend && PYTHONPATH=. uvicorn main:app --host 0.0.0.0 --port $PORT
+    envVars:
+      - key: SEC_CONTACT_NAME
+        value: MiniPalantirResearchBot
+      - key: SEC_CONTACT_EMAIL
+        sync: false
+      - key: SEC_RATE_LIMIT_PER_SECOND
+        value: "2"
+      - key: MAX_NEWS_ITEMS
+        value: "8"
